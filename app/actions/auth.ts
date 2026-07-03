@@ -22,9 +22,7 @@ export async function loginAction(
     return { error: "Invalid email or password." }
   }
 
-  console.log("[v0] credentials verified, creating session...")
   await createSession(email.trim().toLowerCase())
-  console.log("[v0] session created, redirecting to dashboard")
   redirect("/dashboard")
 }
 
