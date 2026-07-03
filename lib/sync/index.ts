@@ -13,17 +13,33 @@ export type SyncOutcome = {
   error?: string
 }
 
-function defaultRange(days: number): { from: Date; to: Date } {
-  const to = new Date()
-  const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000)
-  return { from, to }
+/** Start of the current day in UTC. */
+function startOfTodayUtc(): Date {
+  const now = new Date()
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
 }
 
+/** Tomorrow at 00:00:00.000Z ("to" is exclusive on the Vercel API). */
+function startOfTomorrowUtc(): Date {
+  const today = startOfTodayUtc()
+  return new Date(today.getTime() + 24 * 60 * 60 * 1000)
+}
+
+/** Backfill range: start of day UTC `days` ago → tomorrow start of day UTC. */
+function defaultRange(days: number): { from: Date; to: Date } {
+  const today = startOfTodayUtc()
+  return {
+    from: new Date(today.getTime() - days * 24 * 60 * 60 * 1000),
+    to: startOfTomorrowUtc(),
+  }
+}
+
+/** Current month range: first day of month 00:00Z → tomorrow 00:00Z. */
 export function currentMonthRange(): { from: Date; to: Date } {
   const now = new Date()
   return {
     from: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),
-    to: now,
+    to: startOfTomorrowUtc(),
   }
 }
 

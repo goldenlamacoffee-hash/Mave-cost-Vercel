@@ -67,10 +67,18 @@ export async function syncVercelBilling(opts: { from: Date; to: Date }): Promise
   if (!token) throw new Error("VERCEL_API_TOKEN is not set")
   if (!teamId) throw new Error("VERCEL_TEAM_ID is not set")
 
+  // Vercel billing API requires ISO 8601 UTC date-time strings (never epoch ms or date-only)
+  if (Number.isNaN(opts.from.getTime()) || Number.isNaN(opts.to.getTime())) {
+    throw new Error("Invalid sync date range: from/to must be valid dates")
+  }
+  const fromIso = opts.from.toISOString()
+  const toIso = opts.to.toISOString()
+  console.log("[v0] Vercel billing sync range:", { fromIso, toIso })
+
   const url = new URL(`${VERCEL_API}/v1/billing/charges`)
   url.searchParams.set("teamId", teamId)
-  url.searchParams.set("from", String(opts.from.getTime()))
-  url.searchParams.set("to", String(opts.to.getTime()))
+  url.searchParams.set("from", fromIso)
+  url.searchParams.set("to", toIso)
 
   const response = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
