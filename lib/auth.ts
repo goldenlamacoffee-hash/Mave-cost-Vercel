@@ -22,7 +22,10 @@ export function verifyCredentials(email: string, password: string): boolean {
   const adminEmail = process.env.ADMIN_EMAIL
   const adminPassword = process.env.ADMIN_PASSWORD
   if (!adminEmail || !adminPassword) return false
-  return safeCompare(email.trim().toLowerCase(), adminEmail.trim().toLowerCase()) && safeCompare(password, adminPassword)
+  return (
+    safeCompare(email.trim().toLowerCase(), adminEmail.trim().toLowerCase()) &&
+    safeCompare(password.trim(), adminPassword.trim())
+  )
 }
 
 export async function createSession(email: string): Promise<void> {
