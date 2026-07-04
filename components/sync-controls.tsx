@@ -32,16 +32,26 @@ export function SyncControls() {
         from: opts?.useRange && from ? from : undefined,
         to: opts?.useRange && to ? to : undefined,
       })
-      if (result.ok) {
-        const imported = result.outcomes?.reduce((s, o) => s + (o.result?.rowsImported ?? 0), 0) ?? 0
-        const updated = result.outcomes?.reduce((s, o) => s + (o.result?.rowsUpdated ?? 0), 0) ?? 0
+      const outcomes = result.outcomes ?? []
+      const succeeded = outcomes.filter((o) => o.ok)
+      const failed = outcomes.filter((o) => !o.ok)
+
+      if (failed.length === 0 && outcomes.length > 0) {
+        const imported = succeeded.reduce((s, o) => s + (o.result?.rowsImported ?? 0), 0)
+        const updated = succeeded.reduce((s, o) => s + (o.result?.rowsUpdated ?? 0), 0)
         setMessage({ text: `Done. ${imported} imported, ${updated} updated.`, error: false })
+      } else if (outcomes.length > 0) {
+        // Partial results: report successes separately so they don't look broken
+        const okPart =
+          succeeded.length > 0
+            ? `Succeeded: ${succeeded
+                .map((o) => `${o.source} (${(o.result?.rowsImported ?? 0)} imported)`)
+                .join(", ")}. `
+            : ""
+        const failPart = `Failed: ${failed.map((o) => `${o.source}: ${o.error}`).join(" | ")}`
+        setMessage({ text: `${okPart}${failPart}`, error: true })
       } else {
-        const failed = result.outcomes?.filter((o) => !o.ok).map((o) => `${o.source}: ${o.error}`)
-        setMessage({
-          text: failed?.length ? failed.join(" | ") : (result.error ?? "Sync failed"),
-          error: true,
-        })
+        setMessage({ text: result.error ?? "Sync failed", error: true })
       }
       router.refresh()
     })
