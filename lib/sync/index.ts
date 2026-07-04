@@ -25,12 +25,16 @@ function startOfTomorrowUtc(): Date {
   return new Date(today.getTime() + 24 * 60 * 60 * 1000)
 }
 
-/** Backfill range: start of day UTC `days` ago → tomorrow start of day UTC. */
+/**
+ * Backfill range spanning exactly `days` days, ending tomorrow 00:00Z.
+ * E.g. days=90 → from = tomorrow - 90 days, so the span never exceeds
+ * the v0 API's 90-day maximum in a single call.
+ */
 function defaultRange(days: number): { from: Date; to: Date } {
-  const today = startOfTodayUtc()
+  const to = startOfTomorrowUtc()
   return {
-    from: new Date(today.getTime() - days * 24 * 60 * 60 * 1000),
-    to: startOfTomorrowUtc(),
+    from: new Date(to.getTime() - days * 24 * 60 * 60 * 1000),
+    to,
   }
 }
 
@@ -64,16 +68,20 @@ async function runSingle(
 }
 
 /**
- * Run a sync. `days` controls the backfill window (default 35 to cover the
- * current month plus a buffer). Each source fails gracefully and
- * independently — one failure never blocks the others.
+ * Run a sync. Range priority: explicit from/to → `days` backfill window →
+ * current month (the default for "Sync now" and cron). Each source fails
+ * gracefully and independently — one failure never blocks the others.
  */
 export async function runSync(
   source: SyncSource,
   opts?: { from?: Date; to?: Date; days?: number },
 ): Promise<SyncOutcome[]> {
   const range =
-    opts?.from && opts?.to ? { from: opts.from, to: opts.to } : defaultRange(opts?.days ?? 35)
+    opts?.from && opts?.to
+      ? { from: opts.from, to: opts.to }
+      : opts?.days
+        ? defaultRange(opts.days)
+        : currentMonthRange()
 
   if (source !== "all") {
     return [await runSingle(source, range)]
