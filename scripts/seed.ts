@@ -20,6 +20,9 @@ const COST_CENTERS = [
   { name: "MonoCool / Zymbo AC", slug: "monocool-zymbo-ac" },
   { name: "LMVK Group", slug: "lmvk-group" },
   { name: "Czech B2B / E-shop", slug: "czech-b2b-eshop" },
+  { name: "Nabytech / NT Kování", slug: "nabytech-nt-kovani" },
+  { name: "Ashborn Aries Label", slug: "ashborn-aries-label" },
+  { name: "Internal Tools / Mave Cost Control", slug: "internal-tools-mave-cost-control" },
   { name: "Unassigned / Draft", slug: "unassigned-draft" },
 ]
 
