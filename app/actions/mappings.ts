@@ -41,6 +41,36 @@ export async function assignProjectToCostCenter(
   }
 }
 
+export async function applyChatSuggestions(
+  entries: Array<{ chatRowId: string; costCenterId: string }>,
+): Promise<{ ok: boolean; applied?: number; error?: string }> {
+  try {
+    await requireAdmin()
+    if (entries.length === 0) return { ok: true, applied: 0 }
+
+    let applied = 0
+    for (const entry of entries) {
+      await db
+        .update(v0Chats)
+        .set({ manualBusinessCostCenterId: entry.costCenterId, updatedAt: new Date() })
+        .where(eq(v0Chats.id, entry.chatRowId))
+
+      await db.insert(manualMappings).values({
+        mappingType: "v0_chat",
+        sourceId: entry.chatRowId,
+        businessCostCenterId: entry.costCenterId,
+        notes: "Applied from automatic suggestion",
+      })
+      applied++
+    }
+
+    revalidateDashboard()
+    return { ok: true, applied }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Failed" }
+  }
+}
+
 export async function assignChatToCostCenter(
   chatRowId: string,
   businessCostCenterId: string | null,
